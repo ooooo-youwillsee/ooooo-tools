@@ -17,6 +17,10 @@ var (
 
 func main() {
 	dir := "C:\\Users\\ooooo\\Development\\Code\\Demo\\istio.io\\content\\en"
+	if len(os.Args) == 2 {
+		dir = os.Args[1]
+	}
+
 	targetFile := filepath.Join(curDir, "transform_words.txt")
 	words := TransformWords(dir)
 	err := os.WriteFile(targetFile, []byte(words), 0644)
