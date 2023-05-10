@@ -3,8 +3,8 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/ooooo-youwillsee/ooooo-tools/pkg/file"
 	"io"
-	"ooooo-tools/pkg"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,7 +27,7 @@ func main() {
 
 func TransformWords(dir string) string {
 	var words []string
-	pkg.TravelDir(dir, func(path string) {
+	file.TravelDir(dir, func(path string) {
 		fmt.Println(path)
 		if !strings.Contains(path, ".md") {
 			return
