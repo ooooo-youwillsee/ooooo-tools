@@ -21,7 +21,7 @@ func main() {
 		dir = os.Args[1]
 	}
 
-	targetFile := filepath.Join(curDir, "transform_words.txt")
+	targetFile := filepath.Join(curDir, "output.txt")
 	words := TransformWords(dir)
 	err := os.WriteFile(targetFile, []byte(words), 0644)
 	if err != nil {
