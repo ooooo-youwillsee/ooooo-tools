@@ -41,8 +41,36 @@ func Test_extractImagesForLine(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := extractImagesForLine(tt.args.line, tt.args.imagePrefix); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("extractImagesForLine() = %v, want %v", got, tt.want)
+			if got := ExtractImagesForLine(tt.args.line, tt.args.imagePrefix); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ExtractImagesForLine() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_renameImage(t *testing.T) {
+	type args struct {
+		image    string
+		username string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "simple",
+			args: args{
+				image:    "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/controller:v0.47.0@sha256:f2d03e5b00345da4bf91044daff32795f6f54edb23f8a36742abd729929c7943",
+				username: "youwillsee",
+			},
+			want: "docker.io/youwillsee/gcr_io_tekton-releases_github.com_tektoncd_pipeline_cmd_controller:v0.47.0",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := RenameImage(tt.args.image, tt.args.username); got != tt.want {
+				t.Errorf("RenameImage() = %v, want %v", got, tt.want)
 			}
 		})
 	}

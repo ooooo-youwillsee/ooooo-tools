@@ -44,8 +44,8 @@ func main() {
 }
 
 func pullImageToDocker() {
-	images := extractImages()
-	pullImages(images)
-	newImages := tagImages(images)
+	images := ExtractImages()
+	PullImages(images)
+	newImages := TagImages(images)
 	pushImages(newImages)
 }
