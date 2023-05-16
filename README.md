@@ -8,9 +8,12 @@ go install github.com/ooooo-youwillsee/ooooo-tools/cmd/extractwords@latest
 # usage: extractwords -f words_file -d words_dir -o output.txt
 extractwords -f /path/to/words.file -o output.txt
 
-# install pullimagetodocker (拉取镜像，推送到docker中)
-go install github.com/ooooo-youwillsee/ooooo-tools/cmd/pullimagetodocker@latest
+# install syncimage (拉取镜像，推送到docker中)
+go install github.com/ooooo-youwillsee/ooooo-tools/cmd/syncimage@latest
 
-# usage: pullimagetodocker -f k8s_yaml_file -d k8s_yaml_dir -u docker.username
-pullimagetodocker -f /path/to/k8s.yaml -u youwillsee -o output
+# usage: 
+# syncimage remote -f /Users/ooooo/Downloads/tekton.yaml -r docker.io/youwillsee -i gcr.io -e https_proxy=http://127.0.0.1:1080 -e http_proxy=http://127.0.0.1:1080 -v
+# syncimage local -f /Users/ooooo/Downloads/tekton.yaml -i gcr.io -e https_proxy=http://127.0.0.1:1080 -e http_proxy=http://127.0.0.1:1080 -v
+
+syncimage -f /path/to/k8s.yaml -u youwillsee -v
 ```

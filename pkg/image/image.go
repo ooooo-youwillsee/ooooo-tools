@@ -1,25 +1,30 @@
-package main
+package image
 
 import (
 	"fmt"
 	"github.com/ooooo-youwillsee/ooooo-tools/pkg/file"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
-func ExtractImagesForLine(line, imagePrefix string) []string {
+func extractImagesForLine(line, imagePrefix string) []string {
 	var images []string
 	cnt := strings.Count(line, imagePrefix)
 	for i := 0; i < cnt; i++ {
 		begin := strings.Index(line, imagePrefix)
 		for end := begin; end < len(line); end++ {
 			// find corresponding symbol or reached to end positon
-			if line[end] == line[begin-1] || end == len(line)-1 {
-				image := strings.TrimSpace(line[begin:end])
-				image = strings.Split(image, "@")[0]
+			if end == len(line)-1 {
+				image := strings.TrimSpace(line[begin:])
 				images = append(images, image)
-				line = line[end+1:]
+				break
+			}
+			if line[end] == line[begin-1] {
+				image := strings.TrimSpace(line[begin:end])
+				images = append(images, image)
+				line = line[end:]
 				break
 			}
 		}
@@ -27,24 +32,16 @@ func ExtractImagesForLine(line, imagePrefix string) []string {
 	return images
 }
 
-func ExtractImages() []string {
+func ExtractImages(path, imagePrefix string, verbose bool) []string {
 	if verbose {
 		fmt.Println("Extract images:")
 		fmt.Println()
 	}
 
 	var images []string
-	if filePath != "" {
-		file.TravelPathEachLine(filePath, func(line string) {
-			images = append(images, ExtractImagesForLine(line, imagePrefix)...)
-		})
-	}
-
-	if dirPath != "" {
-		file.TravelPathEachLine(dirPath, func(line string) {
-			images = append(images, ExtractImagesForLine(line, imagePrefix)...)
-		})
-	}
+	file.TravelPathForEachLine(path, func(line string) {
+		images = append(images, extractImagesForLine(line, imagePrefix)...)
+	})
 
 	if verbose {
 		for _, image := range images {
@@ -55,15 +52,15 @@ func ExtractImages() []string {
 	return images
 }
 
-func PullImages(images []string) {
+func PullImages(images []string, env []string, verbose bool) {
 	if verbose {
-		fmt.Println()
 		fmt.Println("Pull images:")
 		fmt.Println()
 	}
 
 	for _, image := range images {
 		cmd := exec.Command("docker", "pull", image)
+		cmd.Env = append(os.Environ(), env...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -78,7 +75,7 @@ func PullImages(images []string) {
 	}
 }
 
-func RenameImage(image, username string) string {
+func RenameImage(image, repository string) string {
 	// gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/controller:v0.47.0@sha256:f2d03e5b00345da4bf91044daff32795f6f54edb23f8a36742abd729929c7943
 	image = strings.Split(image, "@")[0]
 	segs := strings.Split(image, ":")
@@ -90,19 +87,34 @@ func RenameImage(image, username string) string {
 	}
 	imageName := strings.Join(segs, "_")
 
-	image = fmt.Sprintf("%s/%s/%s:%s", "docker.io", username, imageName, version)
+	image = fmt.Sprintf("%s/%s:%s", repository, imageName, version)
 	return image
 }
 
-func TagImages(images []string) []string {
+func RenameImages(images []string, repository string, verbose bool) []string {
+	if verbose {
+		fmt.Println("Rename Images:")
+		fmt.Println()
+	}
+	var newImages []string
+	for _, image := range images {
+		newImage := RenameImage(image, repository)
+		newImages = append(newImages, newImage)
+		if verbose {
+			fmt.Printf("Rename %s to %s.\n", image, newImage)
+		}
+	}
+	fmt.Println()
+	return newImages
+}
+
+func TagImages(images, newImages []string, verbose bool) {
 	if verbose {
 		fmt.Println("Tag images:")
 		fmt.Println()
 	}
-
-	var newImages []string
-	for _, image := range images {
-		newImage := RenameImage(image, username)
+	for i := range images {
+		image, newImage := images[i], newImages[i]
 		cmd := exec.Command("docker", "tag", image, newImage)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -114,13 +126,11 @@ func TagImages(images []string) []string {
 		if err != nil {
 			panic(err)
 		}
-
-		newImages = append(newImages, newImage)
 	}
-	return newImages
+	fmt.Println()
 }
 
-func pushImages(images []string) {
+func PushImages(images []string, verbose bool) {
 	if verbose {
 		fmt.Println("Push images:")
 		fmt.Println()
@@ -139,5 +149,24 @@ func pushImages(images []string) {
 			panic(err)
 		}
 		fmt.Println()
+	}
+}
+
+func SaveImage(images []string, output string, verbose bool) {
+	for _, image := range images {
+		image = strings.Split(image, "@")[0]
+		tarName := strings.ReplaceAll(strings.ReplaceAll(image, "/", "_"), ":", "__")
+		tarFile := filepath.Join(output, tarName+".tar")
+		cmd := exec.Command("docker", "save", "-o", tarFile, image)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if verbose {
+			fmt.Println(cmd.String())
+		}
+		err := cmd.Run()
+		if err != nil {
+			panic(fmt.Errorf("Save Image, err: %v", err))
+		}
 	}
 }
